@@ -1,0 +1,357 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Warung Kelontong</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-store"></i>
+                <span id="storeName">Warung Kelontong</span> - Admin
+            </div>
+            <div class="header-actions">
+                <button class="login-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Navigation -->
+    <div class="admin-nav">
+        <div class="admin-nav-container">
+            <a href="#products" class="admin-nav-item active" data-tab="products">
+                <i class="fas fa-boxes"></i> Produk
+            </a>
+            <a href="#orders" class="admin-nav-item" data-tab="orders">
+                <i class="fas fa-shopping-cart"></i> Pesanan
+            </a>
+            <a href="#inventory" class="admin-nav-item" data-tab="inventory">
+                <i class="fas fa-warehouse"></i> Inventory
+            </a>
+            <a href="#settings" class="admin-nav-item" data-tab="settings">
+                <i class="fas fa-cog"></i> Pengaturan
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="admin-container">
+        <!-- Tab Produk -->
+        <div id="products-tab" class="admin-tab active">
+            <div class="admin-header">
+                <h2>Manajemen Produk</h2>
+                <button class="btn-primary" id="addProductBtn">
+                    <i class="fas fa-plus"></i> Tambah Produk
+                </button>
+            </div>
+            
+            <div class="admin-content">
+                <div class="search-box-admin">
+                    <input type="text" id="productSearch" placeholder="Cari produk...">
+                    <button id="productSearchBtn"><i class="fas fa-search"></i></button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Gambar</th>
+                                <th>Nama Produk</th>
+                                <th>Kategori</th>
+                                <th>Harga</th>
+                                <th>Stok</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTable">
+                            <!-- Data produk akan dimuat di sini -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Pesanan -->
+        <div id="orders-tab" class="admin-tab">
+            <div class="admin-header">
+                <h2>Manajemen Pesanan</h2>
+                <div class="filter-orders">
+                    <select id="orderStatusFilter">
+                        <option value="all">Semua Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="processed">Diproses</option>
+                        <option value="completed">Selesai</option>
+                        <option value="cancelled">Dibatalkan</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="admin-content">
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID Pesanan</th>
+                                <th>Tanggal</th>
+                                <th>Pelanggan</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTable">
+                            <!-- Data pesanan akan dimuat di sini -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Inventory -->
+        <div id="inventory-tab" class="admin-tab">
+            <div class="admin-header">
+                <h2>Manajemen Inventory</h2>
+                <button class="btn-primary" id="exportInventoryBtn">
+                    <i class="fas fa-file-export"></i> Ekspor Data
+                </button>
+            </div>
+            
+            <div class="admin-content">
+                <div class="inventory-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalProducts">0</div>
+                        <div class="stat-label">Total Produk</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="lowStockProducts">0</div>
+                        <div class="stat-label">Stok Rendah</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="outOfStockProducts">0</div>
+                        <div class="stat-label">Stok Habis</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalInventoryValue">Rp 0</div>
+                        <div class="stat-label">Nilai Inventory</div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Produk</th>
+                                <th>Stok Tersedia</th>
+                                <th>Harga Beli</th>
+                                <th>Harga Jual</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTable">
+                            <!-- Data inventory akan dimuat di sini -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Pengaturan -->
+        <div id="settings-tab" class="admin-tab">
+            <div class="admin-header">
+                <h2>Pengaturan Toko</h2>
+            </div>
+            
+            <div class="admin-content">
+                <form id="storeSettingsForm" class="settings-form">
+                    <div class="form-group">
+                        <label for="storeNameSetting">Nama Toko</label>
+                        <input type="text" id="storeNameSetting" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="storeAddressSetting">Alamat Toko</label>
+                        <textarea id="storeAddressSetting" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="storeOwnerSetting">Nama Pemilik</label>
+                        <input type="text" id="storeOwnerSetting" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="storePhoneSetting">No. Telepon/WhatsApp</label>
+                        <input type="tel" id="storePhoneSetting" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="storeEmailSetting">Email</label>
+                        <input type="email" id="storeEmailSetting">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="storeAboutSetting">Tentang Toko</label>
+                        <textarea id="storeAboutSetting" rows="4"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Simpan Pengaturan</button>
+                </form>
+                
+                <div class="settings-section">
+                    <h3>Ubah Password</h3>
+                    <form id="changePasswordForm" class="settings-form">
+                        <div class="form-group">
+                            <label for="currentPassword">Password Saat Ini</label>
+                            <input type="password" id="currentPassword" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newPassword">Password Baru</label>
+                            <input type="password" id="newPassword" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmNewPassword">Konfirmasi Password Baru</label>
+                            <input type="password" id="confirmNewPassword" required>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary">Ubah Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tambah/Edit Produk -->
+    <div class="modal" id="productModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="productModalTitle">Tambah Produk Baru</h3>
+                <button class="close-btn" id="closeProductModal">&times;</button>
+            </div>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                
+                <div class="form-group">
+                    <label for="productName">Nama Produk</label>
+                    <input type="text" id="productName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productCategory">Kategori</label>
+                    <select id="productCategory" required>
+                        <option value="">Pilih Kategori</option>
+                        <option value="sembako">Sembako</option>
+                        <option value="makanan">Makanan</option>
+                        <option value="minuman">Minuman</option>
+                        <option value="bumbu">Bumbu</option>
+                        <option value="sabun-pembersih">Sabun & Pembersih</option>
+                        <option value="rokok">Rokok</option>
+                        <option value="susu">Susu</option>
+                        <option value="atk">ATK</option>
+                        <option value="obat">Obat-obatan</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productPrice">Harga Jual (Rp)</label>
+                        <input type="number" id="productPrice" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productCost">Harga Beli (Rp)</label>
+                        <input type="number" id="productCost" min="0">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productStock">Stok</label>
+                        <input type="number" id="productStock" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productMinStock">Stok Minimum</label>
+                        <input type="number" id="productMinStock" min="0" value="5">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productImage">URL Gambar</label>
+                    <input type="text" id="productImage" placeholder="https://...">
+                    <small>Kosongkan untuk menggunakan gambar default</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productDescription">Deskripsi Produk</label>
+                    <textarea id="productDescription" rows="3"></textarea>
+                </div>
+                
+                <button type="submit" class="btn-primary">Simpan Produk</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Detail Pesanan -->
+    <div class="modal" id="orderDetailModal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Detail Pesanan #<span id="orderId"></span></h3>
+                <button class="close-btn" id="closeOrderModal">&times;</button>
+            </div>
+            
+            <div class="order-detail-container">
+                <div class="order-info">
+                    <div class="info-group">
+                        <h4>Informasi Pesanan</h4>
+                        <p><strong>Tanggal:</strong> <span id="orderDate"></span></p>
+                        <p><strong>Status:</strong> <span id="orderStatus" class="status-badge"></span></p>
+                        <p><strong>Total:</strong> <span id="orderTotal"></span></p>
+                    </div>
+                    
+                    <div class="info-group">
+                        <h4>Informasi Pelanggan</h4>
+                        <p><strong>Nama:</strong> <span id="customerName"></span></p>
+                        <p><strong>WhatsApp:</strong> <span id="customerPhone"></span></p>
+                        <p><strong>Alamat:</strong> <span id="customerAddress"></span></p>
+                    </div>
+                </div>
+                
+                <div class="order-items">
+                    <h4>Item Pesanan</h4>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Produk</th>
+                                <th>Qty</th>
+                                <th>Harga</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderItemsList">
+                            <!-- Item pesanan akan dimuat di sini -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="order-actions" id="orderActions">
+                    <!-- Tombol aksi akan dimuat berdasarkan status pesanan -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/admin.js"></script>
+</body>
+</html>

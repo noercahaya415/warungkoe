@@ -1,0 +1,593 @@
+﻿class AdminManager {
+    constructor() {
+        this.db = new Database();
+        this.auth = new AuthManager();
+        this.currentTab = 'products';
+        this.init();
+    }
+
+    init() {
+        // Cek apakah user sudah login
+        if (!this.auth.isLoggedIn()) {
+            window.location.href = '../index.html';
+            return;
+        }
+
+        this.setupEventListeners();
+        this.loadProducts();
+        this.loadOrders();
+        this.loadInventoryStats();
+        this.loadStoreSettings();
+    }
+
+    setupEventListeners() {
+        // Navigation tabs
+        document.querySelectorAll('.admin-nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tab = item.getAttribute('data-tab');
+                this.switchTab(tab);
+            });
+        });
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            this.auth.logout();
+        });
+
+        // Product modal
+        document.getElementById('addProductBtn').addEventListener('click', () => {
+            this.openProductModal();
+        });
+
+        document.getElementById('closeProductModal').addEventListener('click', () => {
+            this.closeProductModal();
+        });
+
+        // Product form submission
+        document.getElementById('productForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveProduct();
+        });
+
+        // Order status filter
+        document.getElementById('orderStatusFilter').addEventListener('change', () => {
+            this.loadOrders();
+        });
+
+        // Store settings form
+        document.getElementById('storeSettingsForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveStoreSettings();
+        });
+
+        // Change password form
+        document.getElementById('changePasswordForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.changePassword();
+        });
+
+        // Export inventory
+        document.getElementById('exportInventoryBtn').addEventListener('click', () => {
+            this.exportInventory();
+        });
+
+        // Close order modal
+        document.getElementById('closeOrderModal').addEventListener('click', () => {
+            this.closeOrderModal();
+        });
+    }
+
+    switchTab(tab) {
+        // Update navigation
+        document.querySelectorAll('.admin-nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+        // Update tabs
+        document.querySelectorAll('.admin-tab').forEach(tabElement => {
+            tabElement.classList.remove('active');
+        });
+        document.getElementById(`${tab}-tab`).classList.add('active');
+
+        this.currentTab = tab;
+
+        // Load data based on tab
+        switch(tab) {
+            case 'products':
+                this.loadProducts();
+                break;
+            case 'orders':
+                this.loadOrders();
+                break;
+            case 'inventory':
+                this.loadInventoryStats();
+                this.loadInventory();
+                break;
+            case 'settings':
+                this.loadStoreSettings();
+                break;
+        }
+    }
+
+    loadProducts() {
+        const products = this.db.getProducts();
+        const tableBody = document.getElementById('productsTable');
+        
+        if (products.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada produk</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = products.map(product => `
+            <tr>
+                <td><img src="${product.image || 'https://via.placeholder.com/50x50?text=Produk'}" alt="${product.name}"></td>
+                <td>${product.name}</td>
+                <td>${this.getCategoryName(product.category)}</td>
+                <td>Rp ${product.price.toLocaleString('id-ID')}</td>
+                <td>${product.stock}</td>
+                <td class="action-buttons">
+                    <button class="btn-secondary edit-product" data-id="${product.id}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-danger delete-product" data-id="${product.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Add event listeners to action buttons
+        document.querySelectorAll('.edit-product').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.getAttribute('data-id');
+                this.editProduct(productId);
+            });
+        });
+
+        document.querySelectorAll('.delete-product').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.getAttribute('data-id');
+                this.deleteProduct(productId);
+            });
+        });
+    }
+
+    getCategoryName(categoryKey) {
+        const categories = {
+            'sembako': 'Sembako',
+            'makanan': 'Makanan',
+            'minuman': 'Minuman',
+            'bumbu': 'Bumbu',
+            'sabun-pembersih': 'Sabun & Pembersih',
+            'rokok': 'Rokok',
+            'susu': 'Susu',
+            'atk': 'ATK',
+            'obat': 'Obat-obatan'
+        };
+        
+        return categories[categoryKey] || categoryKey;
+    }
+
+    openProductModal(product = null) {
+        const modal = document.getElementById('productModal');
+        const title = document.getElementById('productModalTitle');
+        
+        if (product) {
+            title.textContent = 'Edit Produk';
+            document.getElementById('productId').value = product.id;
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productCategory').value = product.category;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productCost').value = product.cost || '';
+            document.getElementById('productStock').value = product.stock;
+            document.getElementById('productMinStock').value = product.minStock || 5;
+            document.getElementById('productImage').value = product.image || '';
+            document.getElementById('productDescription').value = product.description || '';
+        } else {
+            title.textContent = 'Tambah Produk Baru';
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+        }
+        
+        modal.style.display = 'flex';
+    }
+
+    closeProductModal() {
+        document.getElementById('productModal').style.display = 'none';
+    }
+
+    saveProduct() {
+        const productId = document.getElementById('productId').value;
+        const productData = {
+            name: document.getElementById('productName').value,
+            category: document.getElementById('productCategory').value,
+            price: parseInt(document.getElementById('productPrice').value),
+            cost: parseInt(document.getElementById('productCost').value) || 0,
+            stock: parseInt(document.getElementById('productStock').value),
+            minStock: parseInt(document.getElementById('productMinStock').value) || 5,
+            image: document.getElementById('productImage').value || `https://via.placeholder.com/300x300?text=${encodeURIComponent(document.getElementById('productName').value)}`,
+            description: document.getElementById('productDescription').value
+        };
+
+        const products = this.db.getProducts();
+
+        if (productId) {
+            // Edit existing product
+            const index = products.findIndex(p => p.id == productId);
+            if (index !== -1) {
+                productData.id = parseInt(productId);
+                products[index] = productData;
+            }
+        } else {
+            // Add new product
+            productData.id = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+            products.push(productData);
+        }
+
+        this.db.saveProducts(products);
+        this.closeProductModal();
+        this.loadProducts();
+        
+        alert('Produk berhasil disimpan');
+    }
+
+    editProduct(productId) {
+        const products = this.db.getProducts();
+        const product = products.find(p => p.id == productId);
+        
+        if (product) {
+            this.openProductModal(product);
+        }
+    }
+
+    deleteProduct(productId) {
+        if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+            const products = this.db.getProducts();
+            const filteredProducts = products.filter(p => p.id != productId);
+            
+            this.db.saveProducts(filteredProducts);
+            this.loadProducts();
+            
+            alert('Produk berhasil dihapus');
+        }
+    }
+
+    loadOrders() {
+        const orders = this.db.getOrders();
+        const statusFilter = document.getElementById('orderStatusFilter').value;
+        
+        let filteredOrders = orders;
+        if (statusFilter !== 'all') {
+            filteredOrders = orders.filter(order => order.status === statusFilter);
+        }
+        
+        const tableBody = document.getElementById('ordersTable');
+        
+        if (filteredOrders.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada pesanan</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = filteredOrders.map(order => `
+            <tr>
+                <td>#${order.id.slice(-6)}</td>
+                <td>${new Date(order.date).toLocaleDateString('id-ID')}</td>
+                <td>${order.customer.name}</td>
+                <td>Rp ${order.total.toLocaleString('id-ID')}</td>
+                <td><span class="status-badge ${order.status}">${this.getStatusText(order.status)}</span></td>
+                <td class="action-buttons">
+                    <button class="btn-secondary view-order" data-id="${order.id}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn-primary process-order" data-id="${order.id}" ${order.status !== 'pending' ? 'disabled' : ''}>
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Add event listeners
+        document.querySelectorAll('.view-order').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const orderId = e.currentTarget.getAttribute('data-id');
+                this.viewOrder(orderId);
+            });
+        });
+
+        document.querySelectorAll('.process-order').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const orderId = e.currentTarget.getAttribute('data-id');
+                this.processOrder(orderId);
+            });
+        });
+    }
+
+    getStatusText(status) {
+        const statusTexts = {
+            'pending': 'Pending',
+            'processed': 'Diproses',
+            'completed': 'Selesai',
+            'cancelled': 'Dibatalkan'
+        };
+        
+        return statusTexts[status] || status;
+    }
+
+    viewOrder(orderId) {
+        const orders = this.db.getOrders();
+        const order = orders.find(o => o.id === orderId);
+        
+        if (!order) return;
+        
+        // Fill order details
+        document.getElementById('orderId').textContent = order.id.slice(-6);
+        document.getElementById('orderDate').textContent = new Date(order.date).toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById('orderStatus').textContent = this.getStatusText(order.status);
+        document.getElementById('orderStatus').className = `status-badge ${order.status}`;
+        document.getElementById('orderTotal').textContent = `Rp ${order.total.toLocaleString('id-ID')}`;
+        
+        document.getElementById('customerName').textContent = order.customer.name;
+        document.getElementById('customerPhone').textContent = order.customer.phone;
+        document.getElementById('customerAddress').textContent = order.customer.address;
+        
+        // Fill order items
+        const itemsList = document.getElementById('orderItemsList');
+        itemsList.innerHTML = order.items.map(item => `
+            <tr>
+                <td>${item.product.name}</td>
+                <td>${item.quantity}</td>
+                <td>Rp ${item.product.price.toLocaleString('id-ID')}</td>
+                <td>Rp ${(item.product.price * item.quantity).toLocaleString('id-ID')}</td>
+            </tr>
+        `).join('');
+        
+        // Set up action buttons based on order status
+        const actionsDiv = document.getElementById('orderActions');
+        actionsDiv.innerHTML = '';
+        
+        if (order.status === 'pending') {
+            actionsDiv.innerHTML = `
+                <button class="btn-primary" id="markProcessedBtn">Tandai sebagai Diproses</button>
+                <button class="btn-danger" id="cancelOrderBtn">Batalkan Pesanan</button>
+            `;
+            
+            document.getElementById('markProcessedBtn').addEventListener('click', () => {
+                this.updateOrderStatus(orderId, 'processed');
+            });
+            
+            document.getElementById('cancelOrderBtn').addEventListener('click', () => {
+                this.updateOrderStatus(orderId, 'cancelled');
+            });
+        } else if (order.status === 'processed') {
+            actionsDiv.innerHTML = `
+                <button class="btn-primary" id="markCompletedBtn">Tandai sebagai Selesai</button>
+            `;
+            
+            document.getElementById('markCompletedBtn').addEventListener('click', () => {
+                this.updateOrderStatus(orderId, 'completed');
+            });
+        }
+        
+        // Show modal
+        document.getElementById('orderDetailModal').style.display = 'flex';
+    }
+
+    closeOrderModal() {
+        document.getElementById('orderDetailModal').style.display = 'none';
+    }
+
+    processOrder(orderId) {
+        this.updateOrderStatus(orderId, 'processed');
+    }
+
+    updateOrderStatus(orderId, status) {
+        const orders = this.db.getOrders();
+        const orderIndex = orders.findIndex(o => o.id === orderId);
+        
+        if (orderIndex !== -1) {
+            orders[orderIndex].status = status;
+            this.db.saveOrders(orders);
+            
+            this.loadOrders();
+            this.closeOrderModal();
+            
+            alert(`Status pesanan berhasil diubah menjadi ${this.getStatusText(status)}`);
+        }
+    }
+
+    loadInventoryStats() {
+        const products = this.db.getProducts();
+        
+        const totalProducts = products.length;
+        const lowStockProducts = products.filter(p => p.stock > 0 && p.stock <= (p.minStock || 5)).length;
+        const outOfStockProducts = products.filter(p => p.stock === 0).length;
+        const totalInventoryValue = products.reduce((sum, product) => {
+            return sum + (product.cost || product.price * 0.7) * product.stock;
+        }, 0);
+        
+        document.getElementById('totalProducts').textContent = totalProducts;
+        document.getElementById('lowStockProducts').textContent = lowStockProducts;
+        document.getElementById('outOfStockProducts').textContent = outOfStockProducts;
+        document.getElementById('totalInventoryValue').textContent = `Rp ${totalInventoryValue.toLocaleString('id-ID')}`;
+    }
+
+    loadInventory() {
+        const products = this.db.getProducts();
+        const tableBody = document.getElementById('inventoryTable');
+        
+        if (products.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada produk</td></tr>';
+            return;
+        }
+
+        tableBody.innerHTML = products.map(product => {
+            let status = 'normal';
+            let statusText = 'Normal';
+            
+            if (product.stock === 0) {
+                status = 'out-of-stock';
+                statusText = 'Habis';
+            } else if (product.stock <= (product.minStock || 5)) {
+                status = 'low-stock';
+                statusText = 'Rendah';
+            }
+            
+            return `
+                <tr>
+                    <td>${product.name}</td>
+                    <td>${product.stock}</td>
+                    <td>Rp ${(product.cost || product.price * 0.7).toLocaleString('id-ID')}</td>
+                    <td>Rp ${product.price.toLocaleString('id-ID')}</td>
+                    <td><span class="status-badge ${status}">${statusText}</span></td>
+                    <td class="action-buttons">
+                        <button class="btn-secondary edit-product" data-id="${product.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-primary restock-product" data-id="${product.id}">
+                            <i class="fas fa-boxes"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        // Add event listeners
+        document.querySelectorAll('.edit-product').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.getAttribute('data-id');
+                this.editProduct(productId);
+            });
+        });
+
+        document.querySelectorAll('.restock-product').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.getAttribute('data-id');
+                this.restockProduct(productId);
+            });
+        });
+    }
+
+    restockProduct(productId) {
+        const products = this.db.getProducts();
+        const product = products.find(p => p.id == productId);
+        
+        if (product) {
+            const quantity = prompt(`Masukkan jumlah stok yang ingin ditambahkan untuk ${product.name}:`, "10");
+            
+            if (quantity && !isNaN(quantity) && parseInt(quantity) > 0) {
+                product.stock += parseInt(quantity);
+                this.db.saveProducts(products);
+                this.loadInventory();
+                this.loadInventoryStats();
+                
+                alert(`Stok ${product.name} berhasil ditambahkan sebanyak ${quantity} unit`);
+            }
+        }
+    }
+
+    loadStoreSettings() {
+        const store = this.db.getStore();
+        
+        if (store) {
+            document.getElementById('storeNameSetting').value = store.name || '';
+            document.getElementById('storeAddressSetting').value = store.address || '';
+            document.getElementById('storeOwnerSetting').value = store.owner || '';
+            document.getElementById('storePhoneSetting').value = store.phone || '';
+            document.getElementById('storeEmailSetting').value = store.email || '';
+            document.getElementById('storeAboutSetting').value = store.about || '';
+        }
+    }
+
+    saveStoreSettings() {
+        const store = this.db.getStore() || {};
+        
+        store.name = document.getElementById('storeNameSetting').value;
+        store.address = document.getElementById('storeAddressSetting').value;
+        store.owner = document.getElementById('storeOwnerSetting').value;
+        store.phone = document.getElementById('storePhoneSetting').value;
+        store.email = document.getElementById('storeEmailSetting').value;
+        store.about = document.getElementById('storeAboutSetting').value;
+        
+        this.db.saveStore(store);
+        
+        // Update store name in header
+        const storeNameElement = document.getElementById('storeName');
+        if (storeNameElement) {
+            storeNameElement.textContent = store.name;
+        }
+        
+        alert('Pengaturan toko berhasil disimpan');
+    }
+
+    changePassword() {
+        const store = this.db.getStore();
+        
+        if (!store) {
+            alert('Toko belum di-setup');
+            return;
+        }
+        
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+        
+        if (store.password !== currentPassword) {
+            alert('Password saat ini salah');
+            return;
+        }
+        
+        if (newPassword !== confirmNewPassword) {
+            alert('Password baru dan konfirmasi password tidak cocok');
+            return;
+        }
+        
+        store.password = newPassword;
+        this.db.saveStore(store);
+        
+        document.getElementById('changePasswordForm').reset();
+        alert('Password berhasil diubah');
+    }
+
+    exportInventory() {
+        const products = this.db.getProducts();
+        
+        // Create CSV content
+        let csvContent = "Nama Produk,Kategori,Stok,Harga Beli,Harga Jual,Status\n";
+        
+        products.forEach(product => {
+            let status = 'Normal';
+            if (product.stock === 0) {
+                status = 'Habis';
+            } else if (product.stock <= (product.minStock || 5)) {
+                status = 'Rendah';
+            }
+            
+            csvContent += `"${product.name}",${this.getCategoryName(product.category)},${product.stock},${product.cost || product.price * 0.7},${product.price},${status}\n`;
+        });
+        
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `inventory-${new Date().toISOString().slice(0, 10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
+// Initialize admin manager when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    new AdminManager();
+});

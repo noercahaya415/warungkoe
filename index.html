@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toko Retail - Warung Kelontong Modern</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <i class="fas fa-store"></i>
+                <span id="storeName">Warung Kelontong</span>
+            </div>
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Cari produk...">
+                    <button id="searchBtn"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="cart-icon" id="cartIcon">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </div>
+                <button class="login-btn" id="loginBtn">
+                    <i class="fas fa-user"></i> Admin Login
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Horizontal Category Navigation -->
+    <div class="categories-container">
+        <div class="categories-scroll">
+            <div class="category-item-horizontal active" data-category="all">
+                <i class="fas fa-boxes"></i>
+                <span>Semua</span>
+            </div>
+            <div class="category-item-horizontal" data-category="sembako">
+                <i class="fas fa-shopping-basket"></i>
+                <span>Sembako</span>
+            </div>
+            <div class="category-item-horizontal" data-category="makanan">
+                <i class="fas fa-utensils"></i>
+                <span>Makanan</span>
+            </div>
+            <div class="category-item-horizontal" data-category="minuman">
+                <i class="fas fa-wine-bottle"></i>
+                <span>Minuman</span>
+            </div>
+            <div class="category-item-horizontal" data-category="bumbu">
+                <i class="fas fa-mortar-pestle"></i>
+                <span>Bumbu</span>
+            </div>
+            <div class="category-item-horizontal" data-category="sabun-pembersih">
+                <i class="fas fa-pump-soap"></i>
+                <span>Sabun & Pembersih</span>
+            </div>
+            <div class="category-item-horizontal" data-category="rokok">
+                <i class="fas fa-smoking"></i>
+                <span>Rokok</span>
+            </div>
+            <div class="category-item-horizontal" data-category="susu">
+                <i class="fas fa-glass-whiskey"></i>
+                <span>Susu</span>
+            </div>
+            <div class="category-item-horizontal" data-category="atk">
+                <i class="fas fa-pencil-alt"></i>
+                <span>ATK</span>
+            </div>
+            <div class="category-item-horizontal" data-category="obat">
+                <i class="fas fa-pills"></i>
+                <span>Obat-obatan</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="filter-container">
+            <select class="sort-select" id="sortSelect">
+                <option value="newest">Urutkan: Terbaru</option>
+                <option value="price-low">Harga: Rendah ke Tinggi</option>
+                <option value="price-high">Harga: Tinggi ke Rendah</option>
+                <option value="name-asc">Nama: A-Z</option>
+                <option value="name-desc">Nama: Z-A</option>
+            </select>
+            
+            <div class="filter-price">
+                <label>Filter Harga:</label>
+                <input type="number" id="minPrice" placeholder="Min" min="0">
+                <span>-</span>
+                <input type="number" id="maxPrice" placeholder="Max" min="0">
+                <button id="applyPriceFilter">Terapkan</button>
+            </div>
+        </div>
+
+        <!-- Daftar Produk -->
+        <div class="products-container">
+            <div class="products-header">
+                <h2 class="section-title">Produk Terbaru</h2>
+            </div>
+            <div class="products-grid" id="productsGrid">
+                <!-- Produk akan dimuat melalui JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Keranjang Belanja -->
+    <div class="modal" id="cartModal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-shopping-cart"></i> Keranjang Belanja</h3>
+                <button class="close-btn" id="closeCartModal">&times;</button>
+            </div>
+            <div class="cart-items-container">
+                <div class="cart-items" id="cartItems">
+                    <p class="empty-cart-message" id="emptyCartMessage">Keranjang belanja Anda kosong</p>
+                </div>
+                <div class="cart-summary">
+                    <div class="cart-total">
+                        <span>Total Barang: <span id="totalItems">0</span></span>
+                        <span>Total Harga: <span id="cartTotal">Rp 0</span></span>
+                    </div>
+                </div>
+                
+                <div class="customer-data">
+                    <h4>Data Pemesanan</h4>
+                    <div class="form-group">
+                        <label for="customerName">Nama Lengkap</label>
+                        <input type="text" id="customerName" placeholder="Masukkan nama lengkap">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">No. WhatsApp</label>
+                        <input type="tel" id="customerPhone" placeholder="Masukkan nomor WhatsApp">
+                    </div>
+                    <div class="form-group">
+                        <label for="customerAddress">Alamat Lengkap</label>
+                        <textarea id="customerAddress" placeholder="Masukkan alamat lengkap untuk pengiriman"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="locationPin">Pin Lokasi (opsional)</label>
+                        <div id="miniMap" class="mini-map">
+                            <p>Muat peta...</p>
+                        </div>
+                        <button id="getLocationBtn" class="location-btn">
+                            <i class="fas fa-map-marker-alt"></i> Dapatkan Lokasi Saya
+                        </button>
+                    </div>
+                    
+                    <button class="checkout-btn" id="checkoutBtn">
+                        <i class="fab fa-whatsapp"></i> Pesan via WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Login Admin -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Login Admin</h3>
+                <button class="close-btn" id="closeLoginModal">&times;</button>
+            </div>
+            <div id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Masukkan username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Masukkan password">
+                </div>
+                <button class="admin-login-btn" id="adminLoginBtn">Login</button>
+                <p class="setup-link">Belum punya akun? <a href="#" id="setupStoreLink">Setup Toko</a></p>
+            </div>
+            
+            <div id="setupForm" style="display: none;">
+                <h3>Setup Toko</h3>
+                <div class="form-group">
+                    <label for="storeUsername">Username</label>
+                    <input type="text" id="storeUsername" placeholder="Buat username">
+                </div>
+                <div class="form-group">
+                    <label for="storePassword">Password</label>
+                    <input type="password" id="storePassword" placeholder="Buat password">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Konfirmasi Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Ulangi password">
+                </div>
+                <div class="form-group">
+                    <label for="storeDisplayName">Nama Toko</label>
+                    <input type="text" id="storeDisplayName" placeholder="Nama toko Anda">
+                </div>
+                <div class="form-group">
+                    <label for="storeAddress">Alamat Toko</label>
+                    <textarea id="storeAddress" placeholder="Alamat lengkap toko"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="storeOwner">Nama Pemilik</label>
+                    <input type="text" id="storeOwner" placeholder="Nama pemilik toko">
+                </div>
+                <div class="form-group">
+                    <label for="storePhone">No. Telepon/WhatsApp</label>
+                    <input type="tel" id="storePhone" placeholder="Nomor telepon/WhatsApp toko">
+                </div>
+                <button class="admin-login-btn" id="saveStoreSetupBtn">Simpan & Login</button>
+                <p class="setup-link">Sudah punya akun? <a href="#" id="backToLoginLink">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/database.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
