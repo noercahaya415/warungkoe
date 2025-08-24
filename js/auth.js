@@ -1,4 +1,4 @@
-﻿class AuthManager {
+class AuthManager {
     constructor() {
         this.db = new Database();
         this.currentUser = null;
@@ -35,6 +35,11 @@
         if (store.username === username && store.password === password) {
             this.currentUser = username;
             this.updateUIForAuth();
+	    // REDIRECT KE HALAMAN ADMIN SETELAH LOGIN BERHASIL
+            setTimeout(() => {
+            	window.location.href = 'pages/admin.html';
+            }, 500);		
+
             return true;
         } else {
             alert('Username atau password salah.');
